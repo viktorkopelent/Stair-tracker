@@ -1,0 +1,9 @@
+{
+  "name": "the-ascent",
+  "version": "1.0.0",
+  "description": "Stair-climb floor tracker with a mountain leaderboard",
+  "private": true,
+  "dependencies": {
+    "@upstash/redis": "^1.34.0"
+  }
+}

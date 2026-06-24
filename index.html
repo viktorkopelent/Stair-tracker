@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ascent — Floor Climb Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:#0c1014; --surface:#161b22; --surface2:#1c232c; --border:#27303a;
+    --ice:#7dd3fc; --ice-dim:#2a4858; --summit:#fbbf24;
+    --text:#e8edf2; --muted:#6b7888; --danger:#ef4444; --green:#34d399;
+    --mono:'Space Mono', monospace; --sans:'Inter', sans-serif;
+  }
+
+  body { background:var(--bg); color:var(--text); font-family:var(--sans);
+    min-height:100vh; padding:1.5rem 1rem 4rem; }
+  .wrap { max-width:760px; margin:0 auto; }
+
+  header { text-align:center; margin-bottom:1.8rem; }
+  .eyebrow { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.25em;
+    color:var(--ice); text-transform:uppercase; margin-bottom:0.4rem; }
+  h1 { font-family:var(--mono); font-size:clamp(1.7rem,5vw,2.6rem);
+    font-weight:700; line-height:1; letter-spacing:-0.03em; }
+  h1 span { color:var(--ice); }
+  .subtitle { margin-top:0.5rem; font-size:0.85rem; color:var(--muted); font-weight:300; }
+
+  .mountain-card { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; margin-bottom:1.4rem; }
+  .mountain-head { display:flex; justify-content:space-between; align-items:center;
+    padding:0.9rem 1.2rem; border-bottom:1px solid var(--border); }
+  .mountain-title { font-family:var(--mono); font-size:0.68rem; letter-spacing:0.15em;
+    text-transform:uppercase; color:var(--muted); }
+  .total-pill { font-family:var(--mono); font-size:0.78rem; color:var(--ice);
+    background:var(--ice-dim); padding:0.2rem 0.7rem; border-radius:20px; }
+
+  .mountain { position:relative; height:480px;
+    background:linear-gradient(180deg,#0a1622 0%,#0e1b2a 35%,#122130 70%,#0c1014 100%);
+    overflow:hidden; }
+  .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.5; }
+  .mountain svg.range { position:absolute; bottom:0; left:0; width:100%; height:100%; }
+
+  .summit-marker { position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    text-align:center; z-index:5; }
+  .summit-marker .flag { font-size:1.4rem; }
+  .summit-marker .lbl { font-family:var(--mono); font-size:0.6rem; color:var(--summit);
+    letter-spacing:0.1em; margin-top:-4px; }
+
+  .grid-line { position:absolute; left:0; width:100%; height:1px; background:rgba(125,211,252,0.06); }
+  .grid-line span { position:absolute; right:8px; top:-8px; font-family:var(--mono);
+    font-size:0.6rem; color:var(--muted); }
+
+  .climber { position:absolute; display:flex; flex-direction:column; align-items:center;
+    transform:translate(-50%,0);
+    transition:bottom 0.9s cubic-bezier(0.22,1,0.36,1), left 0.6s ease; z-index:10; }
+  .climber .icon { width:30px; height:30px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;
+    border:2px solid #0c1014; box-shadow:0 2px 8px rgba(0,0,0,0.5); }
+  .climber .tag { margin-top:2px; font-size:0.6rem; font-family:var(--mono);
+    background:rgba(12,16,20,0.85); padding:1px 5px; border-radius:4px;
+    white-space:nowrap; color:var(--text); max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+  .climber .floors-tag { color:var(--ice); }
+  .climber.leader .icon { border-color:var(--summit); box-shadow:0 0 14px #fbbf2477; }
+
+  .empty-mountain { position:absolute; top:45%; left:50%; transform:translate(-50%,-50%);
+    text-align:center; color:var(--muted); font-family:var(--mono); font-size:0.82rem; }
+
+  .card { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:1.3rem; margin-bottom:1.2rem; }
+  .card-title { font-family:var(--mono); font-size:0.65rem; letter-spacing:0.15em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:1rem;
+    display:flex; justify-content:space-between; align-items:center; }
+
+  .players-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+  @media (max-width:560px){ .players-grid { grid-template-columns:1fr; } }
+
+  .player-card { background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:0.9rem; display:flex; flex-direction:column; gap:0.7rem; }
+  .pc-head { display:flex; align-items:center; gap:0.6rem; }
+  .pc-icon { width:38px; height:38px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-weight:700; font-size:1rem;
+    flex-shrink:0; border:2px solid var(--border); }
+  .pc-info { flex:1; min-width:0; }
+  .pc-name { font-weight:600; font-size:0.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pc-floors { font-family:var(--mono); font-size:0.75rem; color:var(--ice); margin-top:1px; }
+  .pc-rank { font-family:var(--mono); font-size:0.7rem; color:var(--muted); }
+
+  .pc-controls { display:flex; gap:0.4rem; align-items:center; }
+  .pc-controls input { background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-family:var(--mono); font-size:0.85rem; padding:0.45rem 0.5rem;
+    width:100%; outline:none; text-align:center; }
+  .pc-controls input:focus { border-color:var(--ice); }
+  .pc-add { background:var(--ice); border:none; border-radius:6px; color:#06121c;
+    cursor:pointer; font-family:var(--mono); font-weight:700; font-size:0.82rem;
+    padding:0.45rem 0.8rem; white-space:nowrap; transition:all 0.12s; }
+  .pc-add:hover { background:#a5e4ff; }
+  .pc-add:active { transform:scale(0.95); }
+  .pc-add:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .pc-quick { display:flex; gap:0.3rem; }
+  .pc-quick button { flex:1; background:transparent; border:1px solid var(--border);
+    border-radius:5px; color:var(--muted); cursor:pointer; font-family:var(--mono);
+    font-size:0.72rem; padding:0.25rem 0; transition:all 0.12s; }
+  .pc-quick button:hover { border-color:var(--ice); color:var(--ice); }
+
+  .pc-admin-del { background:transparent; border:none; color:#ef444455; cursor:pointer;
+    font-size:0.9rem; padding:0 0.2rem; align-self:flex-start; }
+  .pc-admin-del:hover { color:var(--danger); }
+
+  .btn-ghost { background:transparent; border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); cursor:pointer; font-family:var(--mono); font-size:0.72rem;
+    padding:0.35rem 0.8rem; transition:all 0.12s; }
+  .btn-ghost:hover { border-color:var(--ice); color:var(--ice); }
+  .btn-ghost.active { border-color:var(--summit); color:var(--summit); }
+
+  .admin-panel { background:var(--surface2); border:1px dashed var(--summit);
+    border-radius:10px; padding:1rem; margin-top:0.4rem; margin-bottom:1rem; }
+  .admin-row { display:flex; gap:0.5rem; margin-bottom:0.6rem; }
+  .admin-row input { flex:1; background:var(--bg); border:1px solid var(--border);
+    border-radius:6px; color:var(--text); font-size:0.9rem; padding:0.55rem 0.8rem; outline:none; }
+  .admin-row input:focus { border-color:var(--summit); }
+  .btn-primary { background:var(--summit); border:none; border-radius:6px; color:#1a1300;
+    cursor:pointer; font-family:var(--mono); font-weight:700; font-size:0.82rem;
+    padding:0.55rem 1rem; white-space:nowrap; transition:all 0.12s; }
+  .btn-primary:hover { background:#fcd34d; }
+  .admin-hint { font-size:0.72rem; color:var(--muted); }
+  .reset-link { background:none; border:none; color:#ef444466; cursor:pointer;
+    font-family:var(--mono); font-size:0.7rem; margin-top:0.6rem; text-decoration:underline; }
+  .reset-link:hover { color:var(--danger); }
+
+  .flash { position:fixed; top:1rem; left:50%; transform:translateX(-50%);
+    background:var(--surface); border:1px solid var(--green); color:var(--green);
+    font-family:var(--mono); font-size:0.78rem; padding:0.5rem 1.1rem; border-radius:6px;
+    opacity:0; pointer-events:none; transition:opacity 0.2s; z-index:999; white-space:nowrap; }
+  .flash.err { border-color:var(--danger); color:var(--danger); }
+  .flash.show { opacity:1; }
+
+  .loading { color:var(--muted); font-family:var(--mono); font-size:0.82rem;
+    text-align:center; padding:1.4rem 0; }
+
+  .conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--green); margin-right:5px; vertical-align:middle; }
+  .conn-dot.off { background:var(--danger); }
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Every floor is altitude</div>
+    <h1>THE <span>ASCENT</span></h1>
+    <p class="subtitle">Take the stairs. Climb the mountain.</p>
+  </header>
+
+  <div class="mountain-card">
+    <div class="mountain-head">
+      <div class="mountain-title"><span class="conn-dot" id="connDot"></span>// the climb</div>
+      <div class="total-pill" id="totalPill">— floors total</div>
+    </div>
+    <div class="mountain" id="mountain"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span>// climbers</span>
+      <button class="btn-ghost" id="adminToggle" onclick="toggleAdmin()">⚙ admin</button>
+    </div>
+    <div id="adminWrap"></div>
+    <div class="players-grid" id="playersGrid">
+      <div class="loading">connecting...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  Config
+// ═══════════════════════════════════════════════════════
+const QUICK_ADD = [1, 2, 5, 10];
+const PEAK_FLOORS_MIN = 20;
+const REFRESH_MS = 10000;
+
+const PALETTE = [
+  ['#1e3a5f','#60a5fa'],['#3b1f5e','#c084fc'],['#1a3d2b','#4ade80'],
+  ['#3d1f1a','#fb7185'],['#3d2e0a','#fbbf24'],['#1a3038','#22d3ee'],
+  ['#2e1a3d','#a78bfa'],['#1a2e3d','#34d399'],['#3d2a1a','#fb923c'],
+  ['#2a1a3d','#e879f9'],['#1a3d35','#2dd4bf'],['#3d1a2e','#f472b6'],
+];
+function paletteFor(id){
+  let h = 0; for (const c of id) h = (h*31 + c.charCodeAt(0)) & 0xffffffff;
+  return PALETTE[Math.abs(h) % PALETTE.length];
+}
+
+let isAdmin = false;
+let adminPin = null;        // held in memory only after a successful unlock
+let cache = { players: [] };
+
+// ═══════════════════════════════════════════════════════
+//  API helpers
+// ═══════════════════════════════════════════════════════
+async function apiGet(){
+  const r = await fetch('/api/state', { cache:'no-store' });
+  if (!r.ok) throw new Error('state failed');
+  return r.json();
+}
+async function apiLog(playerId, amount){
+  const r = await fetch('/api/log', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ playerId, amount })
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'log failed');
+  return data;
+}
+async function apiAdmin(action, extra={}){
+  const r = await fetch('/api/admin', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ pin: adminPin, action, ...extra })
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'admin failed');
+  return data;
+}
+
+function setConnected(ok){
+  document.getElementById('connDot').className = 'conn-dot' + (ok ? '' : ' off');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Flash
+// ═══════════════════════════════════════════════════════
+let flashT;
+function showFlash(msg, err=false){
+  const el = document.getElementById('flash');
+  el.textContent = msg;
+  el.className = 'flash show' + (err ? ' err' : '');
+  clearTimeout(flashT);
+  flashT = setTimeout(()=> el.classList.remove('show'), 2400);
+}
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════════════
+//  Actions
+// ═══════════════════════════════════════════════════════
+async function addFloors(playerId, amount){
+  amount = parseInt(amount, 10);
+  if (!amount || amount < 1){ showFlash('Enter at least 1 floor', true); return; }
+  try {
+    cache = await apiLog(playerId, amount);
+    const p = cache.players.find(x => x.id === playerId);
+    showFlash(`✓ ${p ? p.name : 'Climber'} +${amount} floor${amount!==1?'s':''}`);
+    render();
+  } catch(e){ showFlash(e.message, true); }
+}
+
+async function addPlayer(){
+  const input = document.getElementById('newPlayerName');
+  const name = input.value.trim();
+  if (!name){ showFlash('Enter a name', true); return; }
+  try {
+    cache = await apiAdmin('add', { name });
+    input.value = '';
+    showFlash(`✓ Added ${name}`);
+    render();
+  } catch(e){ showFlash(e.message, true); }
+}
+
+async function removePlayer(playerId){
+  const p = cache.players.find(x => x.id === playerId);
+  if (!p) return;
+  if (!confirm(`Remove ${p.name} from the climb?`)) return;
+  try {
+    cache = await apiAdmin('remove', { playerId });
+    showFlash(`Removed ${p.name}`);
+    render();
+  } catch(e){ showFlash(e.message, true); }
+}
+
+async function resetAll(){
+  if (!confirm('Reset ALL floor counts to zero? Players stay, floors clear.')) return;
+  try {
+    cache = await apiAdmin('reset');
+    showFlash('All floors reset');
+    render();
+  } catch(e){ showFlash(e.message, true); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Admin toggle — verifies PIN against the server
+// ═══════════════════════════════════════════════════════
+async function toggleAdmin(){
+  if (isAdmin){
+    isAdmin = false; adminPin = null;
+    document.getElementById('adminToggle').classList.remove('active');
+    render();
+    return;
+  }
+  const pin = prompt('Enter admin PIN:');
+  if (pin === null) return;
+  adminPin = pin;
+  try {
+    const r = await fetch('/api/admin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pin, action:'verify' })
+    });
+    if (r.status === 401){ adminPin = null; showFlash('Wrong PIN', true); return; }
+    if (!r.ok){ adminPin = null; showFlash('Could not verify PIN', true); return; }
+    isAdmin = true;
+    document.getElementById('adminToggle').classList.add('active');
+    showFlash('Admin mode on');
+    render();
+  } catch(e){ adminPin = null; showFlash('Could not verify PIN', true); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Render
+// ═══════════════════════════════════════════════════════
+function render(){
+  const players = [...(cache.players || [])].sort((a,b)=> (b.floors||0)-(a.floors||0));
+  renderMountain(players);
+  renderPlayers(players);
+  renderAdmin();
+}
+
+function renderMountain(players){
+  const m = document.getElementById('mountain');
+  const total = players.reduce((s,p)=> s+(p.floors||0), 0);
+  document.getElementById('totalPill').textContent = `${total} floor${total!==1?'s':''} total`;
+
+  const maxFloors = Math.max(PEAK_FLOORS_MIN, ...players.map(p=>p.floors||0));
+
+  let stars = '';
+  for (let i=0;i<40;i++)
+    stars += `<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*55}%;opacity:${0.2+Math.random()*0.5}"></div>`;
+
+  const svg = `
+    <svg class="range" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <polygon points="0,100 18,55 30,70 50,18 70,68 82,52 100,100" fill="#162534" opacity="0.55"/>
+      <polygon points="0,100 12,72 28,80 50,40 72,78 88,70 100,100" fill="#1b2c3d" opacity="0.7"/>
+      <polygon points="44,30 50,18 56,30 53,28 50,24 47,28" fill="#e8edf2" opacity="0.85"/>
+    </svg>`;
+
+  let grid = '';
+  [0.25,0.5,0.75].forEach(frac=>{
+    const floorsAt = Math.round(maxFloors*frac);
+    grid += `<div class="grid-line" style="bottom:${8+frac*84}%"><span>${floorsAt} fl</span></div>`;
+  });
+
+  const byFloor = {};
+  players.forEach(p=>{ const f=p.floors||0; (byFloor[f]=byFloor[f]||[]).push(p); });
+
+  let climbers = '';
+  players.forEach(p=>{
+    const f = p.floors||0;
+    const ratio = maxFloors>0 ? f/maxFloors : 0;
+    const bottomPct = 8 + ratio*80;
+    const group = byFloor[f];
+    const idx = group.indexOf(p);
+    const n = group.length;
+    const spread = n===1 ? 0 : (idx-(n-1)/2)*18;
+    const leftPct = 50 + spread + (f===0 ? (idx-(n-1)/2)*4 : 0);
+    const [bg,fg] = paletteFor(p.id);
+    const isLeader = f>0 && f===maxFloors;
+    climbers += `
+      <div class="climber ${isLeader?'leader':''}" style="bottom:${bottomPct}%;left:${Math.max(8,Math.min(92,leftPct))}%">
+        <div class="icon" style="background:${bg};color:${fg}">${escHtml(p.name.charAt(0).toUpperCase())}</div>
+        <div class="tag">${escHtml(p.name.length>8?p.name.slice(0,8)+'…':p.name)} <span class="floors-tag">${f}</span></div>
+      </div>`;
+  });
+
+  const empty = players.length===0
+    ? `<div class="empty-mountain">No climbers yet.<br>Open admin to add players.</div>` : '';
+
+  m.innerHTML = stars + svg +
+    `<div class="summit-marker"><div class="flag">🚩</div><div class="lbl">SUMMIT</div></div>` +
+    grid + climbers + empty;
+}
+
+function renderPlayers(players){
+  const grid = document.getElementById('playersGrid');
+  if (players.length===0){
+    grid.innerHTML = `<div class="loading">No climbers yet${isAdmin?' — add some above.':'.'}</div>`;
+    return;
+  }
+  grid.innerHTML = players.map((p,i)=>{
+    const [bg,fg] = paletteFor(p.id);
+    const rankLabel = i===0?'🥇 1st':i===1?'🥈 2nd':i===2?'🥉 3rd':`#${i+1}`;
+    const quick = QUICK_ADD.map(n=>`<button onclick="addFloors('${p.id}', ${n})">+${n}</button>`).join('');
+    return `
+      <div class="player-card">
+        <div class="pc-head">
+          <div class="pc-icon" style="background:${bg};color:${fg}">${escHtml(p.name.charAt(0).toUpperCase())}</div>
+          <div class="pc-info">
+            <div class="pc-name">${escHtml(p.name)}</div>
+            <div class="pc-floors">${p.floors||0} floors climbed</div>
+            <div class="pc-rank">${rankLabel}</div>
+          </div>
+          ${isAdmin ? `<button class="pc-admin-del" onclick="removePlayer('${p.id}')" title="Remove">✕</button>` : ''}
+        </div>
+        <div class="pc-quick">${quick}</div>
+        <div class="pc-controls">
+          <input type="number" min="1" max="500" placeholder="floors" id="inp-${p.id}"
+                 onkeydown="if(event.key==='Enter'){addFloors('${p.id}', this.value); this.value='';}">
+          <button class="pc-add" onclick="const el=document.getElementById('inp-${p.id}'); addFloors('${p.id}', el.value); el.value='';">＋ Add</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderAdmin(){
+  const wrap = document.getElementById('adminWrap');
+  if (!isAdmin){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = `
+    <div class="admin-panel">
+      <div class="admin-row">
+        <input type="text" id="newPlayerName" placeholder="New climber name" maxlength="30"
+               onkeydown="if(event.key==='Enter') addPlayer();">
+        <button class="btn-primary" onclick="addPlayer()">＋ Add climber</button>
+      </div>
+      <div class="admin-hint">Admin mode: add climbers, remove them (✕ on each card), and reset floors.</div>
+      <button class="reset-link" onclick="resetAll()">reset all floors to zero</button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  Auto-refresh
+// ═══════════════════════════════════════════════════════
+async function refresh(){
+  try { cache = await apiGet(); setConnected(true); render(); }
+  catch(e){ setConnected(false); }
+}
+setInterval(refresh, REFRESH_MS);
+
+// ═══════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════
+(async function init(){
+  try { cache = await apiGet(); setConnected(true); }
+  catch(e){
+    setConnected(false);
+    document.getElementById('playersGrid').innerHTML =
+      '<div class="loading">Could not reach the server. Check that the API and Upstash env vars are set.</div>';
+  }
+  render();
+})();
+</script>
+</body>
+</html>
