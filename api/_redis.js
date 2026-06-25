@@ -1,7 +1,10 @@
 // api/_redis.js — shared helpers used by all API routes.
 import { Redis } from '@upstash/redis';
 
-export const redis = Redis.fromEnv(); // reads UPSTASH_REDIS_REST_URL + _TOKEN
+export const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
 
 export const DATA_KEY = 'ascent:state';
 
