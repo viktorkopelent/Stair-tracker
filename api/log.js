@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     if (!amt || amt < 1) return send(res, 400, { error: 'Amount must be at least 1' });
     if (amt > 500) return send(res, 400, { error: 'Max 500 floors per entry' });
 
-    const MAX_FLOORS = 61;
+    const MAX_FLOORS = 2366;
 
     const state = await loadState();
     const player = state.players.find((p) => p.id === playerId);

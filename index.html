@@ -178,6 +178,14 @@
   .conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%;
     background:var(--green); margin-right:5px; vertical-align:middle; }
   .conn-dot.off { background:var(--danger); }
+
+  /* Milestone markers */
+  .ms-marker { position:absolute; left:0; width:100%; z-index:4; pointer-events:none; }
+  .ms-line { width:100%; height:0; border-top:1px dashed rgba(251,191,36,0.35); }
+  .ms-label { position:absolute; right:8px; top:-16px; font-family:var(--mono);
+    font-size:0.6rem; color:var(--summit); letter-spacing:0.05em; white-space:nowrap;
+    background:rgba(12,16,20,0.75); padding:1px 5px; border-radius:3px; }
+  .ms-label span { color:var(--muted); margin-left:3px; }
 </style>
 </head>
 <body>
@@ -213,7 +221,9 @@
 //  Config
 // ═══════════════════════════════════════════════════════
 const QUICK_ADD = [1, 2, 5, 10];
-const PEAK_FLOORS_MIN = 20;
+const MILESTONE_1 = 429;
+const MILESTONE_2 = 1286;
+const FINISH = 2366;
 const REFRESH_MS = 10000;
 
 const PALETTE = [
@@ -397,7 +407,14 @@ function renderMountain(players){
   const total = players.reduce((s,p)=> s+(p.floors||0), 0);
   document.getElementById('totalPill').textContent = `${total} floor${total!==1?'s':''} total`;
 
-  const maxFloors = Math.max(PEAK_FLOORS_MIN, ...players.map(p=>p.floors||0));
+  // Progressive milestone reveal
+  const maxPlayerFloors = Math.max(0, ...players.map(p => p.floors||0));
+  const m2Visible   = maxPlayerFloors >= MILESTONE_1;
+  const finishVisible = maxPlayerFloors >= MILESTONE_2;
+  // Scale the mountain to the highest revealed milestone
+  const cap = finishVisible ? FINISH : m2Visible ? MILESTONE_2 : MILESTONE_1;
+
+  function toBottom(fl){ return 8 + (fl / cap) * 80; }
 
   let stars = '';
   for (let i=0;i<40;i++)
@@ -410,11 +427,22 @@ function renderMountain(players){
       <polygon points="44,30 50,18 56,30 53,28 50,24 47,28" fill="#e8edf2" opacity="0.85"/>
     </svg>`;
 
-  let grid = '';
-  [0.25,0.5,0.75].forEach(frac=>{
-    const floorsAt = Math.round(maxFloors*frac);
-    grid += `<div class="grid-line" style="bottom:${8+frac*84}%"><span>${floorsAt} fl</span></div>`;
-  });
+  // Summit: 🚩 when finish reached, ☁️ with ??? while still climbing
+  const summit = finishVisible
+    ? `<div class="summit-marker"><div class="flag">🚩</div><div class="lbl">SUMMIT</div></div>`
+    : `<div class="summit-marker"><div class="flag" style="font-size:1.2rem">☁️</div><div class="lbl" style="color:var(--muted)">???</div></div>`;
+
+  // Milestone 1 — always visible
+  const ms1 = `<div class="ms-marker" style="bottom:${toBottom(MILESTONE_1)}%">
+    <div class="ms-line"></div>
+    <div class="ms-label">⛺ Milestone 1<span>${MILESTONE_1} fl</span></div>
+  </div>`;
+
+  // Milestone 2 — revealed when someone hits Milestone 1
+  const ms2 = m2Visible ? `<div class="ms-marker" style="bottom:${toBottom(MILESTONE_2)}%">
+    <div class="ms-line"></div>
+    <div class="ms-label">🏕 Milestone 2<span>${MILESTONE_2} fl</span></div>
+  </div>` : '';
 
   const byFloor = {};
   players.forEach(p=>{ const f=p.floors||0; (byFloor[f]=byFloor[f]||[]).push(p); });
@@ -422,7 +450,7 @@ function renderMountain(players){
   let climbers = '';
   players.forEach(p=>{
     const f = p.floors||0;
-    const ratio = maxFloors>0 ? f/maxFloors : 0;
+    const ratio = cap>0 ? f/cap : 0;
     const bottomPct = 8 + ratio*80;
     const group = byFloor[f];
     const idx = group.indexOf(p);
@@ -430,7 +458,7 @@ function renderMountain(players){
     const spread = n===1 ? 0 : (idx-(n-1)/2)*18;
     const leftPct = 50 + spread + (f===0 ? (idx-(n-1)/2)*4 : 0);
     const [bg,fg] = paletteFor(p.id);
-    const isLeader = f>0 && f===maxFloors;
+    const isLeader = f>0 && f===maxPlayerFloors;
     const isMe = p.id === selectedPlayerId;
     climbers += `
       <div class="climber ${isLeader?'leader':''} ${isMe?'is-me':''}" style="bottom:${bottomPct}%;left:${Math.max(8,Math.min(92,leftPct))}%">
@@ -442,9 +470,7 @@ function renderMountain(players){
   const empty = players.length===0
     ? `<div class="empty-mountain">No climbers yet.<br>Open admin to add players.</div>` : '';
 
-  m.innerHTML = stars + svg +
-    `<div class="summit-marker"><div class="flag">🚩</div><div class="lbl">SUMMIT</div></div>` +
-    grid + climbers + empty;
+  m.innerHTML = stars + svg + summit + ms1 + ms2 + climbers + empty;
 }
 
 function renderPickerHTML(players){
