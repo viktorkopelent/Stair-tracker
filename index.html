@@ -455,24 +455,26 @@ function renderMountain(players){
     <div class="ms-label">🏔 Mont Blanc<span>${MILESTONE_2} fl</span></div>
   </div>` : '';
 
-  const byFloor = {};
-  players.forEach(p=>{ const f=p.floors||0; (byFloor[f]=byFloor[f]||[]).push(p); });
+  // Each player gets a fixed horizontal lane based on insertion order so all
+  // players are always spread across the full width regardless of count.
+  const allIds = (cache.players || []).map(p => p.id);
+  const totalLanes = allIds.length;
+  function laneFor(id){
+    const idx = allIds.indexOf(id);
+    return totalLanes <= 1 ? 50 : 12 + (idx / (totalLanes - 1)) * 76;
+  }
 
   let climbers = '';
   players.forEach(p=>{
     const f = p.floors||0;
     const ratio = cap>0 ? f/cap : 0;
     const bottomPct = 8 + ratio*80;
-    const group = byFloor[f];
-    const idx = group.indexOf(p);
-    const n = group.length;
-    const spread = n===1 ? 0 : (idx-(n-1)/2)*18;
-    const leftPct = 50 + spread + (f===0 ? (idx-(n-1)/2)*4 : 0);
+    const leftPct = laneFor(p.id);
     const [bg,fg] = paletteFor(p.id);
     const isLeader = f>0 && f===maxPlayerFloors;
     const isMe = p.id === selectedPlayerId;
     climbers += `
-      <div class="climber ${isLeader?'leader':''} ${isMe?'is-me':''}" style="bottom:${bottomPct}%;left:${Math.max(8,Math.min(92,leftPct))}%">
+      <div class="climber ${isLeader?'leader':''} ${isMe?'is-me':''}" style="bottom:${bottomPct}%;left:${leftPct}%">
         <div class="icon" style="background:${bg};color:${fg}">${escHtml(p.name.charAt(0).toUpperCase())}</div>
         <div class="tag">${escHtml(p.name.length>8?p.name.slice(0,8)+'…':p.name)} <span class="floors-tag">${f}</span></div>
       </div>`;
