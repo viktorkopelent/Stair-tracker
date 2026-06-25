@@ -179,6 +179,15 @@
     background:var(--green); margin-right:5px; vertical-align:middle; }
   .conn-dot.off { background:var(--danger); }
 
+  /* Correction buttons */
+  .my-corrections { display:flex; align-items:center; gap:0.3rem; margin-top:0.45rem; }
+  .corr-label { font-family:var(--mono); font-size:0.62rem; color:var(--muted); flex-shrink:0; margin-right:0.1rem; }
+  .corr-btn { background:transparent; border:1px solid #ef444433; border-radius:5px;
+    color:#ef444477; cursor:pointer; font-family:var(--mono); font-size:0.72rem;
+    padding:0.24rem 0.5rem; transition:all 0.12s; }
+  .corr-btn:hover { border-color:var(--danger); color:var(--danger); }
+  .corr-btn:active { transform:scale(0.95); }
+
   /* Milestone markers */
   .ms-marker { position:absolute; left:0; width:100%; z-index:4; pointer-events:none; }
   .ms-line { width:100%; height:0; border-top:1px dashed rgba(251,191,36,0.35); }
@@ -224,7 +233,7 @@ const QUICK_ADD = [1, 2, 5, 10];
 const MILESTONE_1 = 429;
 const MILESTONE_2 = 1286;
 const FINISH = 2366;
-const REFRESH_MS = 10000;
+const REFRESH_MS = 20000;
 
 const PALETTE = [
   ['#1e3a5f','#60a5fa'],['#3b1f5e','#c084fc'],['#1a3d2b','#4ade80'],
@@ -309,11 +318,13 @@ function switchUser(){
 async function addFloors(amount){
   if (!selectedPlayerId){ showFlash('Select yourself first', true); return; }
   amount = parseInt(amount, 10);
-  if (!amount || amount < 1){ showFlash('Enter at least 1 floor', true); return; }
+  if (!amount){ showFlash('Enter a non-zero amount', true); return; }
+  if (amount < -50 || amount > 500){ showFlash('Amount must be between -50 and +500', true); return; }
   try {
     cache = await apiLog(selectedPlayerId, amount);
     const p = cache.players.find(x => x.id === selectedPlayerId);
-    showFlash(`✓ ${p ? p.name : 'You'} +${amount} floor${amount!==1?'s':''}`);
+    const sign = amount > 0 ? '+' : '';
+    showFlash(`✓ ${p ? p.name : 'You'} ${sign}${amount} floor${Math.abs(amount)!==1?'s':''}`);
     render();
   } catch(e){ showFlash(e.message, true); }
 }
@@ -429,19 +440,19 @@ function renderMountain(players){
 
   // Summit: 🚩 when finish reached, ☁️ with ??? while still climbing
   const summit = finishVisible
-    ? `<div class="summit-marker"><div class="flag">🚩</div><div class="lbl">SUMMIT</div></div>`
+    ? `<div class="summit-marker"><div class="flag">🚩</div><div class="lbl">MT. EVEREST</div></div>`
     : `<div class="summit-marker"><div class="flag" style="font-size:1.2rem">☁️</div><div class="lbl" style="color:var(--muted)">???</div></div>`;
 
   // Milestone 1 — always visible
   const ms1 = `<div class="ms-marker" style="bottom:${toBottom(MILESTONE_1)}%">
     <div class="ms-line"></div>
-    <div class="ms-label">⛺ Milestone 1<span>${MILESTONE_1} fl</span></div>
+    <div class="ms-label">⛺ Sněžka<span>${MILESTONE_1} fl</span></div>
   </div>`;
 
   // Milestone 2 — revealed when someone hits Milestone 1
   const ms2 = m2Visible ? `<div class="ms-marker" style="bottom:${toBottom(MILESTONE_2)}%">
     <div class="ms-line"></div>
-    <div class="ms-label">🏕 Milestone 2<span>${MILESTONE_2} fl</span></div>
+    <div class="ms-label">🏔 Mont Blanc<span>${MILESTONE_2} fl</span></div>
   </div>` : '';
 
   const byFloor = {};
@@ -510,9 +521,13 @@ function renderMyCardHTML(me, players){
     </div>
     <div class="my-quick">${quick}</div>
     <div class="my-input">
-      <input type="number" min="1" max="500" placeholder="custom amount" id="myInp"
+      <input type="number" min="-50" max="500" placeholder="custom amount" id="myInp"
              onkeydown="if(event.key==='Enter'){addFloors(this.value);this.value='';}">
       <button class="pc-add" onclick="addFloors(document.getElementById('myInp').value);document.getElementById('myInp').value='';">＋ Add</button>
+    </div>
+    <div class="my-corrections">
+      <span class="corr-label">correct:</span>
+      ${[-1,-2,-5].map(n=>`<button class="corr-btn" onclick="addFloors(${n})">${n}</button>`).join('')}
     </div>
   </div>`;
 }
@@ -558,7 +573,13 @@ function renderAdmin(){
 //  Auto-refresh
 // ═══════════════════════════════════════════════════════
 async function refresh(){
-  try { cache = await apiGet(); setConnected(true); render(); }
+  try {
+    cache = await apiGet();
+    setConnected(true);
+    // Skip re-render while user is typing so the input field isn't wiped
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+    render();
+  }
   catch(e){ setConnected(false); }
 }
 setInterval(refresh, REFRESH_MS);

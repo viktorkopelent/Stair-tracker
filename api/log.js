@@ -10,7 +10,8 @@ export default async function handler(req, res) {
     const amt = parseInt(amount, 10);
 
     if (!playerId) return send(res, 400, { error: 'Missing playerId' });
-    if (!amt || amt < 1) return send(res, 400, { error: 'Amount must be at least 1' });
+    if (!amt || amt === 0) return send(res, 400, { error: 'Amount must be non-zero' });
+    if (amt < -50) return send(res, 400, { error: 'Max correction is -50 floors' });
     if (amt > 500) return send(res, 400, { error: 'Max 500 floors per entry' });
 
     const MAX_FLOORS = 2366;
@@ -20,9 +21,9 @@ export default async function handler(req, res) {
     if (!player) return send(res, 404, { error: 'Player not found' });
 
     const current = player.floors || 0;
-    if (current >= MAX_FLOORS) return send(res, 400, { error: `Already at the summit — ${MAX_FLOORS} floors reached!` });
+    if (current >= MAX_FLOORS && amt > 0) return send(res, 400, { error: `Already at the summit — ${MAX_FLOORS} floors reached!` });
 
-    player.floors = Math.min(current + amt, MAX_FLOORS);
+    player.floors = Math.min(Math.max(0, current + amt), MAX_FLOORS);
     player.lastLog = Date.now();
     await saveState(state);
 
