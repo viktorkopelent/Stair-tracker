@@ -193,6 +193,27 @@
   .corr-btn:hover { border-color:var(--danger); color:var(--danger); }
   .corr-btn:active { transform:scale(0.95); }
 
+  /* FAQ */
+  .faq-cat { font-family:var(--mono); font-size:0.62rem; letter-spacing:0.15em;
+    text-transform:uppercase; color:var(--muted); margin:1.1rem 0 0.4rem; }
+  .faq-cat:first-child { margin-top:0.2rem; }
+  details.faq-q { border-bottom:1px solid var(--border); }
+  details.faq-q summary { list-style:none; cursor:pointer; padding:0.65rem 0;
+    font-size:0.87rem; font-weight:600; display:flex; justify-content:space-between;
+    align-items:center; user-select:none; gap:1rem; }
+  details.faq-q summary::-webkit-details-marker { display:none; }
+  details.faq-q summary::after { content:'+'; font-family:var(--mono);
+    color:var(--muted); font-size:1rem; flex-shrink:0; }
+  details.faq-q[open] summary { color:var(--ice); }
+  details.faq-q[open] summary::after { content:'−'; color:var(--ice); }
+  .faq-a { font-size:0.84rem; color:var(--muted); line-height:1.65; padding-bottom:0.8rem; }
+  .faq-a table { width:100%; border-collapse:collapse; margin-top:0.5rem;
+    font-family:var(--mono); font-size:0.75rem; }
+  .faq-a th { color:var(--muted); text-align:left; padding:0.3rem 0.6rem;
+    border-bottom:1px solid var(--border); }
+  .faq-a td { padding:0.3rem 0.6rem; color:var(--text); }
+  .faq-a tr:nth-child(even) td { background:var(--surface2); }
+
   /* Milestone markers */
   .ms-marker { position:absolute; left:0; width:100%; z-index:4; pointer-events:none; }
   .ms-line { width:100%; height:0; border-top:1px dashed rgba(251,191,36,0.35); }
@@ -227,6 +248,130 @@
     </div>
     <div id="adminWrap"></div>
     <div id="userSection"><div class="loading">connecting...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">// FAQ</div>
+
+    <div class="faq-cat">The Basics</div>
+
+    <details class="faq-q">
+      <summary>What is this challenge?</summary>
+      <div class="faq-a">Climb to Sněžka is a stair-climbing challenge where your floors add up continuously across 3 milestones — Sněžka (429 floors), Mont Blanc (1,286 floors), and Everest (2,366 floors). You have 1 year from when you start, and you progress entirely at your own pace.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>How much does it cost?</summary>
+      <div class="faq-a">Nothing. The challenge is 100% free for everyone in the group.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>How long do I have?</summary>
+      <div class="faq-a">You have 1 year from the day you start. There is no fixed start date — everyone begins their own personal 1-year clock when they join.</div>
+    </details>
+
+    <div class="faq-cat">What Counts</div>
+
+    <details class="faq-q">
+      <summary>What counts as a floor?</summary>
+      <div class="faq-a">One floor = one storey climbed by stairs. For reference, climbing from the ground floor to the 7th floor counts as 7 floors. Only stair climbing counts — not walking uphill, slopes, or ramps outdoors.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Does walking uphill or hiking count?</summary>
+      <div class="faq-a">No. Only actual stairs count — staircases with defined steps. A hill or slope, even a steep one, does not count.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Do gym stair machines or fitness trackers count?</summary>
+      <div class="faq-a">Yes — if your fitness tracker or gym equipment tracks actual floors climbed (not just steps), you can log those floors. If it only counts steps or distance without distinguishing floors, it does not count.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Do outdoor staircases count?</summary>
+      <div class="faq-a">Yes, any staircase with actual steps counts — indoors or outdoors (park steps, stadium stairs, street staircases, etc.).</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Does taking the escalator count?</summary>
+      <div class="faq-a">No. The whole point is choosing stairs over the elevator or escalator.</div>
+    </details>
+
+    <div class="faq-cat">Logging Floors</div>
+
+    <details class="faq-q">
+      <summary>How do I log my floors?</summary>
+      <div class="faq-a">Open the tracker, select your name, and add the number of floors you climbed. You can use the quick-add buttons (+1, +2, +5, +10) or type a custom amount. Floors accumulate — you never start over.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>How often do I need to log?</summary>
+      <div class="faq-a">There is no requirement. Log whenever it suits you — daily, weekly, or whenever you remember. It is entirely at your own pace.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Should I only log my own floors?</summary>
+      <div class="faq-a">Yes — please only ever log floors for yourself. Be careful when selecting your name and entering a number. If you make a mistake, you can correct it using the small correction buttons (−1, −2, −5) on your card, or type a negative number for a larger correction. If something goes wrong, contact the organiser directly.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>What if I make a bigger mistake?</summary>
+      <div class="faq-a">Get in touch with the organiser who can correct your total directly.</div>
+    </details>
+
+    <div class="faq-cat">The Milestones</div>
+
+    <details class="faq-q">
+      <summary>What are the 3 milestones?</summary>
+      <div class="faq-a">
+        <table>
+          <tr><th>Tier</th><th>Peak</th><th>Floors</th><th>Equivalent</th></tr>
+          <tr><td>1</td><td>Sněžka (1,603 m)</td><td>429</td><td>61 × 7th floor</td></tr>
+          <tr><td>2</td><td>Mont Blanc (4,810 m)</td><td>1,286</td><td>184 × 7th floor</td></tr>
+          <tr><td>3</td><td>Everest (8,849 m)</td><td>2,366</td><td>338 × 7th floor</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Do I start over after reaching Sněžka?</summary>
+      <div class="faq-a">Never. Your floors keep adding up continuously. Reach 429 and you have climbed Sněžka — just keep going toward Mont Blanc, then Everest.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>What do I get for finishing a tier?</summary>
+      <div class="faq-a">A custom physical medal — one for Sněžka, one for Mont Blanc, and one for Everest.</div>
+    </details>
+
+    <div class="faq-cat">Joining</div>
+
+    <details class="faq-q">
+      <summary>How do I join?</summary>
+      <div class="faq-a">Let the organiser know you want to take part and you will be added to the tracker. You cannot add yourself.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>How do I get my medal?</summary>
+      <div class="faq-a">Let the organiser know a bit before you are about to finish a tier so they have time to get your medal ready, then let them know when you actually complete it.</div>
+    </details>
+
+    <div class="faq-cat">Fair Play &amp; Disclaimer</div>
+
+    <details class="faq-q">
+      <summary>Is this tracked automatically?</summary>
+      <div class="faq-a">No — it runs entirely on trust. You log your own floors honestly. The goal is to build a healthy habit, not to win a race.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>Is this platform secure?</summary>
+      <div class="faq-a">This tracker is a simple open tool with no login or password protection. It is not a professional application — the organiser is not a developer and set this up purely to help the group track progress in a fun way. By using it you accept that anyone with the link can see the data, and you use it entirely at your own risk. Do not enter any personal or sensitive information. Please do not share the link with anyone outside of the challenge participants.</div>
+    </details>
+
+    <details class="faq-q">
+      <summary>What if something goes wrong with the tracker?</summary>
+      <div class="faq-a">Contact the organiser directly. They can correct floor counts, add or remove participants, and fix data if needed.</div>
+    </details>
+
   </div>
 </div>
 
