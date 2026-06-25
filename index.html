@@ -202,6 +202,11 @@
     font-size:0.87rem; font-weight:600; display:flex; justify-content:space-between;
     align-items:center; user-select:none; gap:1rem; }
   details.faq-q summary::-webkit-details-marker { display:none; }
+  details.faq-card { cursor:pointer; }
+  details.faq-card > summary { list-style:none; cursor:pointer; }
+  details.faq-card > summary::-webkit-details-marker { display:none; }
+  .faq-hint { font-size:0.65rem; color:var(--muted); font-family:var(--mono); }
+  details.faq-card[open] .faq-hint { display:none; }
   details.faq-q summary::after { content:'+'; font-family:var(--mono);
     color:var(--muted); font-size:1rem; flex-shrink:0; }
   details.faq-q[open] summary { color:var(--ice); }
@@ -250,8 +255,8 @@
     <div id="userSection"><div class="loading">connecting...</div></div>
   </div>
 
-  <div class="card">
-    <div class="card-title">// FAQ</div>
+  <details class="card faq-card">
+    <summary class="card-title">// FAQ <span class="faq-hint">▸ click to expand</span></summary>
 
     <div class="faq-cat">The Basics</div>
 
@@ -372,7 +377,7 @@
       <div class="faq-a">Contact the organiser directly. They can correct floor counts, add or remove participants, and fix data if needed.</div>
     </details>
 
-  </div>
+  </details>
 </div>
 
 <script>
