@@ -105,6 +105,11 @@
   .reset-link { background:none; border:none; color:#ef444466; cursor:pointer;
     font-family:var(--mono); font-size:0.7rem; margin-top:0.6rem; text-decoration:underline; }
   .reset-link:hover { color:var(--danger); }
+  .admin-select { flex:1; background:var(--bg); border:1px solid var(--border);
+    border-radius:6px; color:var(--text); font-size:0.9rem; padding:0.55rem 0.8rem;
+    outline:none; cursor:pointer; }
+  .admin-select:focus { border-color:var(--summit); }
+  .admin-divider { border:none; border-top:1px solid var(--border); margin:0.7rem 0; }
 
   /* User picker */
   .picker-wrap { padding:0.2rem 0 0.4rem; }
@@ -353,6 +358,22 @@ async function removePlayer(playerId){
   } catch(e){ showFlash(e.message, true); }
 }
 
+async function applySetFloors(){
+  const playerId = document.getElementById('setFloorUser')?.value;
+  const raw = document.getElementById('setFloorVal')?.value;
+  if (!playerId || raw === '' || raw == null) return;
+  const exact = parseInt(raw, 10);
+  if (isNaN(exact) || exact < 0) { showFlash('Enter a valid number (0 or more)', true); return; }
+  try {
+    cache = await apiAdmin('setFloors', { playerId, floors: exact });
+    const p = cache.players.find(x => x.id === playerId);
+    showFlash(`✓ ${p ? p.name : 'Player'} set to ${exact} floors`);
+    document.getElementById('setFloorUser').value = '';
+    document.getElementById('setFloorVal').value = '';
+    render();
+  } catch(e){ showFlash(e.message, true); }
+}
+
 async function resetAll(){
   if (!confirm('Reset ALL floor counts to zero? Players stay, floors clear.')) return;
   try {
@@ -551,6 +572,9 @@ function renderLeaderboardHTML(players, me){
 function renderAdmin(){
   const wrap = document.getElementById('adminWrap');
   if (!isAdmin){ wrap.innerHTML=''; return; }
+  const playerOptions = (cache.players || [])
+    .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`)
+    .join('');
   wrap.innerHTML = `
     <div class="admin-panel">
       <div class="admin-row">
@@ -558,7 +582,20 @@ function renderAdmin(){
                onkeydown="if(event.key==='Enter') addPlayer();">
         <button class="btn-primary" onclick="addPlayer()">＋ Add climber</button>
       </div>
-      <div class="admin-hint">Admin mode: add climbers, remove them (✕ on leaderboard), and reset floors.</div>
+      <hr class="admin-divider">
+      <div class="admin-row">
+        <select class="admin-select" id="setFloorUser">
+          <option value="">— select user —</option>
+          ${playerOptions}
+        </select>
+        <input type="number" min="0" max="2366" placeholder="set exact floors"
+               id="setFloorVal" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem;padding:0.55rem 0.8rem;outline:none;"
+               onkeydown="if(event.key==='Enter') applySetFloors();"
+               onfocus="this.style.borderColor='var(--summit)'"
+               onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div class="admin-hint">Select a user and type an exact floor count, then press Enter to apply.</div>
+      <div class="admin-hint" style="margin-top:0.4rem">Remove climbers with ✕ on the leaderboard.</div>
       <button class="reset-link" onclick="resetAll()">reset all floors to zero</button>
     </div>`;
 }
